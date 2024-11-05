@@ -1,0 +1,44 @@
+from .connection import get_connection
+from .utils import *
+from sqlalchemy import insert
+
+def extract():
+
+    tabla = get_table(table) # toma la tabla
+    df = create_dataframe(columns, tabla) # crea un dataframe en base a la tabla
+    
+    return df
+
+
+def transform(df):
+
+    df = change_date_format(df) # transforma el formato de fecha
+
+    return df
+
+
+def load(df):
+    db = getConnection()
+    data = df.to_dict(orient="records") # convierte de dataframe a dict para poder añadir los valores
+    
+    stmt = insert(df) # inserta en el dataframe
+    db.execute(stmt, data) # los valores de data en el stmt
+    db.commit()
+
+tabla = extract()
+df = transform(tabla)
+load(df)
+
+'''
+extract >> transform
+transform >> load
+
+
+blob storage para modelos
+
+tabla básica de iar_ocupaciones
+
+tabla limpia de iar_ocupaciones
+
+tabla agrupada por semana
+'''

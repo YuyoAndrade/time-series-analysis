@@ -21,6 +21,9 @@ def create_dataframe(columns, table):
     df = pd.DataFrame(result.fetchall(), columns=result.keys())
     df = df.drop_duplicates()
 
+    return df
+
+def change_date_format(df):
     df["Fecha_hoy"] = pd.to_datetime(df["Fecha_hoy"])
     df["weekly"] = df["Fecha_hoy"].dt.strftime("%Y-%W")
 
