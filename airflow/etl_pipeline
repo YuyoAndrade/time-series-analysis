@@ -1,23 +1,28 @@
-from .connection import get_connection
-from .utils import *
+from ..database.connection import get_connection
+from ..database.utils import *
 from sqlalchemy import insert
+from airflow import DAG
+from airflow.operators.python import PythonOperator
 
-def extract():
-
+def extract(columns, table, **kwargs):
     tabla = get_table(table) # toma la tabla
     df = create_dataframe(columns, tabla) # crea un dataframe en base a la tabla
-    
-    return df
+    return df.to_dict()
 
 
-def transform(df):
-
+def transform(**kwargs):
+    ti = kwargs['ti']
+    df_dict = ti.xcom_pull(task_ids='extract_task')
+    df = pd.DataFrame.from_dict(df_dict)
     df = change_date_format(df) # transforma el formato de fecha
+    return df.to_dict()
 
-    return df
 
-
-def load(df):
+def load(**kwargs):
+    ti = kwargs['ti']
+    df_dict = ti.xcom_pull(task_ids='transform_task')
+    df = pd.DataFrame.from_dict(df_dict)
+    
     db = getConnection()
     data = df.to_dict(orient="records") # convierte de dataframe a dict para poder añadir los valores
     
@@ -28,6 +33,30 @@ def load(df):
 tabla = extract()
 df = transform(tabla)
 load(df)
+
+
+with DAG(dag_id='etc_pipeline', default_args=default_args, schedule_interval='@daily') as dag:
+    # Define your tasks here
+    extract_task = PythonOperator(
+        task_id='extract_task',
+        python_callable=extract,
+        op_kwargs={'columns': ['column1', 'column2'], 'table': 'table_name'},
+    )
+
+    transform_task = PythonOperator(
+        task_id='transform_task',
+        python_callable=transform,
+        provide_context=True,
+    )
+
+    load_task = PythonOperator(
+        task_id='load_task',
+        python_callable=load,
+        provide_context=True,
+    )
+
+    # Set up the task dependencies
+    extract_task >> transform_task >> load_task
 
 '''
 extract >> transform
