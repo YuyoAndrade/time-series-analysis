@@ -15,7 +15,7 @@ def get_specifics(columns, table):
     return db.execute(text(f"select {statement} from {table} where moneda_cve = 2"))
 
 
-def create_dataframe(columns, table):
+def create_weekly_dataframe(columns, table):
     result = get_specifics(columns=columns, table=table)
 
     df = pd.DataFrame(result.fetchall(), columns=result.keys())
@@ -23,6 +23,21 @@ def create_dataframe(columns, table):
 
     df["Fecha_hoy"] = pd.to_datetime(df["Fecha_hoy"])
     df["weekly"] = df["Fecha_hoy"].dt.strftime("%Y-%W")
+
+    df = df.drop("Fecha_hoy", axis=1)
+    df = df.groupby(by="weekly").sum()
+
+    return df.sort_values(by="weekly", axis=0, ascending=True)
+
+
+def create_daily_dataframe(columns, table):
+    result = get_specifics(columns=columns, table=table)
+
+    df = pd.DataFrame(result.fetchall(), columns=result.keys())
+    df = df.drop_duplicates()
+
+    df["Fecha_hoy"] = pd.to_datetime(df["Fecha_hoy"])
+    df["weekly"] = df["Fecha_hoy"].dt.strftime("%Y-%D")
 
     df = df.drop("Fecha_hoy", axis=1)
     df = df.groupby(by="weekly").sum()
