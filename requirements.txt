@@ -8,3 +8,6 @@ psycopg2-binary
 ipykernel
 keras
 tensorflow
+prophet
+statsmodels
+scikit-learn
