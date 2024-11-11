@@ -4,7 +4,11 @@ matplotlib
 seaborn
 sqlalchemy
 python-dotenv
-psycopg2-binary
 ipykernel
 keras
 tensorflow
+azure-synapse-artifacts
+azure-storage-blob 
+azure-identity
+apache-airflow==2.10.2
+psycopg2-binary

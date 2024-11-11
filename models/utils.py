@@ -3,9 +3,10 @@ import numpy as np
 
 def create_sequences(data, seq_length):
     x, y = [], []
+    column = data.columns[-1]
     for i in range(len(data) - seq_length):
-        x.append(data[i : i + seq_length])
-        y.append(data[i + seq_length])
+        x.append(data[column][i : i + seq_length])
+        y.append(data[column][i + seq_length])
 
     return np.array(x), np.array(y)
 
