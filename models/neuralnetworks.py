@@ -34,7 +34,7 @@ class LSTM(Model):
         self.model = model
         return model
 
-    def training(self, dataset, train, validation=0):
+    def train(self, dataset, train, validation=0):
         model = self.model
         if not model:
             model = self.build_model()
@@ -86,11 +86,15 @@ class LSTM(Model):
 
         return self.model.evaluate(x_test, y_test)  # Evaluate Model
 
-    def predict(self, dataset, test):
-        num_test = get_test_data(data=dataset.to_numpy(), test=test)
-        x, _ = create_sequences(dataset, self.length)
+    def predict(self, dataset, test=0):
+        if test > 0:
+            num_test = get_test_data(data=dataset.to_numpy(), test=test)
+            x, _ = create_sequences(dataset, self.length)
 
-        x_test = x[:][-num_test:]
+            x_test = x[:][-num_test:]
 
-        x_test = x_test.reshape((x_test.shape[0], self.length, 1))
-        return self.model.predict(x_test)  # Return Prediction Values
+            x_test = x_test.reshape((x_test.shape[0], self.length, 1))
+        else:
+            # An array with values length "self.length" to predict length array values
+            x_test = dataset
+        return self.model.predict(x_test)
