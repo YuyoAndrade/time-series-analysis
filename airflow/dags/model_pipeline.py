@@ -30,7 +30,7 @@ default_args = {
 
 with DAG(
     "model_pipeline",
-    description="DAG for ML models creation, testing, load.",
+    description="DAG for ML models creation, training, testing, load.",
     default_args=default_args,
     schedule_interval="@monthly",
     catchup=False,
@@ -41,6 +41,7 @@ with DAG(
         for m in MODELS_TO_CREATE.keys():
             logging.info(f"Creating model - {m}...")
             model = MODELS_TO_CREATE[m]
+            model.build_model()
             model_path = f"./models/tmp/{m}.pkl"
             with open(model_path, "wb") as f:
                 pickle.dump(model, f)
@@ -58,7 +59,7 @@ with DAG(
                 model = pickle.load(f)
             model_name = model.name
             logging.info(f"Training model - {model_name}...")
-            model.training(dataset=dataset, train=TRAIN, validation=VALIDATION)
+            model.train(dataset=dataset, train=TRAIN, validation=VALIDATION)
             with open(model_path, "wb") as f:
                 model = pickle.dump(model, f)
                 logging.info(f"Model - {model_name} trained.")

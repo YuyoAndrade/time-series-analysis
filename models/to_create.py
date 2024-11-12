@@ -1,4 +1,5 @@
 from .neuralnetworks import LSTM
+from .holt_winters import HOLT_WINTERS
 from datetime import date
 
 TRAIN = 0.65
@@ -10,7 +11,12 @@ MODELS_TO_CREATE = {
         name="LSTM",
         created_at=date.today(),
         version="1.0",
-        metrics=[],
         length=2,
-    )
+    ),
+    "HOLT-WINTERS": HOLT_WINTERS(
+        name="HOLT-WINTERS",
+        created_at=date.today(),
+        version="1.0",
+        seasonal_period=365,
+    ),
 }

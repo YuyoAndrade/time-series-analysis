@@ -9,9 +9,3 @@ class Model:
         self.version = version
         self.metrics = metrics
         self.model = model
-
-    def metrics(self):
-        pass
-
-    def predict(self):
-        pass

@@ -277,5 +277,12 @@ services:
       - -c
       - airflow
 
+  streamlit:
+    ports:
+      - "8501:8501"
+    build: 
+      dockerfile: streamlit/Dockerfile
+    command: streamlit run streamlit/app.py --server.port 8501
+
 volumes:
   postgres-db-volume:
