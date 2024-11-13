@@ -10,17 +10,10 @@ from pathlib import Path
 project_root = Path().resolve()
 sys.path.append(str(project_root))
 from models.to_create import MODELS_TO_CREATE, TRAIN, TEST, VALIDATION
-from database.utils import upload_blob_file
+from database.utils import upload_blob_file, azure_get_dataframe
 from database.connection import create_blob_client
 
-# from database.utils import create_daily_dataframe
-
-# dataset = create_daily_dataframe(
-#     columns=["Fecha_hoy", "ing_hab"], table="iar_ocupaciones"
-# )
-
-
-dataset = pd.read_csv("daily.csv")
+DATASET = azure_get_dataframe("daily")
 
 
 default_args = {
@@ -59,7 +52,7 @@ with DAG(
                 model = pickle.load(f)
             model_name = model.name
             logging.info(f"Training model - {model_name}...")
-            model.train(dataset=dataset, train=TRAIN, validation=VALIDATION)
+            model.train(dataset=DATASET, train=TRAIN, validation=VALIDATION)
             with open(model_path, "wb") as f:
                 model = pickle.dump(model, f)
                 logging.info(f"Model - {model_name} trained.")
@@ -75,7 +68,7 @@ with DAG(
                 model = pickle.load(f)
             model_name = model.name
             logging.info(f"Testing model - {model_name}...")
-            model.test(dataset=dataset, test=TEST)
+            model.test(dataset=DATASET, test=TEST)
         logging.info("Finished testing models.")
         return models
 
