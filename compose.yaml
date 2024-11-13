@@ -89,7 +89,6 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ./models:/opt/airflow/models
     - ./database:/opt/airflow/database
-    - ./models/tmp:/opt/airflow/models/tmp
 
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:

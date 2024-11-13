@@ -83,8 +83,9 @@ class LSTM(Model):
         y_test = y[:][-num_test:]
 
         x_test = x_test.reshape((x_test.shape[0], self.length, 1))
-
-        return self.model.evaluate(x_test, y_test)  # Evaluate Model
+        results = self.model.evaluate(x_test, y_test)
+        self.metrics = {"MSE": results[0], "MAE": results[1]}
+        return self.metrics
 
     def predict(self, dataset, test=0):
         if test > 0:

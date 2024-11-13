@@ -92,18 +92,17 @@ def create_daily_dataframe(columns, table):
     df = df.drop_duplicates()
 
     df["Fecha_hoy"] = pd.to_datetime(df["Fecha_hoy"])
-    df["daily"] = df["Fecha_hoy"].dt.strftime("%Y-%D")
+    df["daily"] = df["Fecha_hoy"].dt.strftime("%Y-%m-%d")
 
     df = df.drop("Fecha_hoy", axis=1)
+    df = df[["daily", "ing_hab"]]
     df = df.groupby(by="daily").sum()
 
     return df.sort_values(by="daily", axis=0, ascending=True)
 
 
-def azure_get_dataframe(table):
+def azure_daily_get_dataframe(table):
     result = get_table(table)
     df = pd.DataFrame(result.fetchall(), columns=result.keys())
     df = df.drop_duplicates()
-    # df["daily"] = pd.to_datetime(df["daily"])
-    # df["daily"] = df["daily"].dt.strftime("%Y-%D")
     return df
