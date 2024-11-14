@@ -10,5 +10,6 @@ COPY .env /opt/airflow/.env
 USER airflow
 
 COPY requirements.txt /requirements.txt
+COPY iar_Ocupaciones.csv /opt/airflow/iar_Ocupaciones.csv
 
 RUN pip install --no-cache-dir -r /requirements.txt

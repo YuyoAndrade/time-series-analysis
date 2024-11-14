@@ -90,9 +90,10 @@ def create_daily_dataframe(columns, table):
     df = df.drop_duplicates()
 
     df["Fecha_hoy"] = pd.to_datetime(df["Fecha_hoy"])
-    df["weekly"] = df["Fecha_hoy"].dt.strftime("%Y-%D")
+    df["daily"] = df["Fecha_hoy"].dt.strftime("%Y-%m-%d")
 
     df = df.drop("Fecha_hoy", axis=1)
-    df = df.groupby(by="weekly").sum()
+    df = df[["daily", "ing_hab"]]
+    df = df.groupby(by="daily").sum()
 
-    return df.sort_values(by="weekly", axis=0, ascending=True)
+    return df.sort_values(by="daily", axis=0, ascending=True)
