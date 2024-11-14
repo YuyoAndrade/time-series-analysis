@@ -10,10 +10,10 @@ from pathlib import Path
 project_root = Path().resolve()
 sys.path.append(str(project_root))
 from models.to_create import MODELS_TO_CREATE, TRAIN, TEST, VALIDATION
-from database.utils import upload_blob_file, azure_get_dataframe
+from database.utils import upload_blob_file, azure_daily_get_dataframe
 from database.connection import create_blob_client
 
-DATASET = azure_get_dataframe("daily")
+DATASET = azure_daily_get_dataframe("daily")
 
 
 default_args = {

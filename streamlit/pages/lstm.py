@@ -1,6 +1,6 @@
 import streamlit as st
 
-import pandas as pd
+import numpy as np
 import os
 import pickle
 import matplotlib.pyplot as plt
@@ -78,3 +78,18 @@ fig.autofmt_xdate()
 st.pyplot(fig)
 
 st.write(f"Metrics: ", model.test(dataset=DATASET, test=0.2))
+
+next_days = st.text_input("Prediction X next days:")
+last_n = st.text_input(
+    f"Enter last {model.length} days values separated by commas (ex: 2,3):"
+).split(",")
+
+# Button to execute an action
+if st.button("Predict"):
+    last_n = [int(v) for v in last_n]
+    df = model.predict_next(
+        dataset=np.asarray([last_n], dtype=np.float32), next=int(next_days)
+    )
+    st.write(f"Prediction of next {next_days}")
+    st.write(df)
+    # st.dataframe(df)
