@@ -16,3 +16,4 @@ psycopg2-binary==2.9.10
 streamlit==1.40.1
 statsmodels==0.14.4
 scikit-learn==1.5.2
+pyodbc==5.2.0 

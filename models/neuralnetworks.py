@@ -1,8 +1,11 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import InputLayer, Dropout, Dense, LayerNormalization
+from tensorflow.keras.layers import InputLayer, Dense
 from tensorflow.keras.layers import LSTM as layerLSTM
+import pandas as pd
+import logging
+from datetime import date, timedelta
 
 from .model import Model
 from .utils import get_train_validation_data, get_test_data, create_sequences
@@ -83,18 +86,41 @@ class LSTM(Model):
         y_test = y[:][-num_test:]
 
         x_test = x_test.reshape((x_test.shape[0], self.length, 1))
-
-        return self.model.evaluate(x_test, y_test)  # Evaluate Model
+        results = self.model.evaluate(x_test, y_test)
+        self.metrics = {"MSE": results[0], "MAE": results[1]}
+        return self.metrics
 
     def predict(self, dataset, test=0):
-        if test > 0:
-            num_test = get_test_data(data=dataset.to_numpy(), test=test)
-            x, _ = create_sequences(dataset, self.length)
+        num_test = get_test_data(data=dataset.to_numpy(), test=test)
+        x, _ = create_sequences(dataset, self.length)
 
-            x_test = x[:][-num_test:]
+        x_test = x[:][-num_test:]
 
-            x_test = x_test.reshape((x_test.shape[0], self.length, 1))
-        else:
-            # An array with values length "self.length" to predict length array values
-            x_test = dataset
+        x_test = x_test.reshape((x_test.shape[0], self.length, 1))
         return self.model.predict(x_test)
+
+    def predict_next(self, dataset, next):
+        df = pd.DataFrame(columns=["Day", "Value"])
+        last = dataset
+        last = last.reshape((last.shape[0], last.shape[1], 1))
+        for i in range(next):
+            predicted = self.model.predict(last)
+            logging.info(f"Predicted on: {last} ----- Result: {predicted}")
+            df = pd.concat(
+                [
+                    df,
+                    pd.DataFrame(
+                        data=[
+                            [
+                                date.today() + timedelta(days=i),
+                                predicted[0][0],
+                            ]
+                        ],
+                        columns=["Day", "Value"],
+                    ),
+                ],
+                ignore_index=True,
+            )
+            last[0][0], last[0][1] = last[0][1], predicted
+
+        return df
