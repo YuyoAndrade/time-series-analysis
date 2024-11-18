@@ -90,7 +90,7 @@ with DAG(
             logging.info(f"Row: {i} of {rows} rows...")
             cursor.execute(
                 f"""
-                INSERT INTO {DAILY_TABLE} (Day,Value) 
+                INSERT INTO {DAILY_TABLE} (Day,ing_hab) 
                 select ?, ? 
                 where not exists (
                     select 1

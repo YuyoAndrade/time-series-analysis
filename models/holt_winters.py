@@ -25,7 +25,7 @@ class HOLT_WINTERS(Model):
         self.seasonal_period = seasonal_period
 
     def build_model(self):
-        pass
+        return self.model
 
     def train(self, dataset, train, validation=0):
         x, _ = create_sequences(dataset, 1)
@@ -61,9 +61,9 @@ class HOLT_WINTERS(Model):
         residuals = y_test - test_series
 
         rmse = mean_squared_error(y_test, test_series) ** 0.5
-        logging.info("Root Mean Squared Error (RMSE) - M1:", rmse)
+        logging.info("Root Mean Squared Error (RMSE):", rmse)
         mape = round(np.mean(abs(residuals / y_test)), len(residuals))
-        logging.info("Mean Absolute Percent Error - M1:", mape)
+        logging.info("Mean Absolute Percent Error:", mape)
         self.metrics = {"RMSE": rmse, "MAPE": mape}
         return self.metrics
 

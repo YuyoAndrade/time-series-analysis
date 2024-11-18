@@ -1,6 +1,8 @@
 import streamlit as st
+import plotly.graph_objects as go
 
 import numpy as np
+import pandas as pd
 import os
 import pickle
 import matplotlib.pyplot as plt
@@ -48,7 +50,7 @@ with open(f"/streamlit/models/tmp/{LSTM_MODEL}.pkl", "rb") as f:
 
 predicted = model.predict(dataset=DATASET, test=0.2)
 
-predicted_x = DATASET.index[-len(predicted) :]
+predicted_x = DATASET[-len(predicted) :]
 
 
 st.title("LSTM Test Results")
@@ -57,11 +59,11 @@ fig, ax = plt.subplots(figsize=(14, 7))
 
 # Plot the original test data
 ax.plot(
-    DATASET.index, DATASET["ing_hab"].to_numpy(), label="Original Data", color="blue"
+    DATASET["Day"], DATASET["ing_hab"].to_numpy(), label="Original Data", color="blue"
 )
 
 # Plot the predicted data
-ax.plot(predicted_x, predicted, label="Predicted Data", color="red")
+ax.plot(predicted_x["Day"], predicted, label="Predicted Data", color="red")
 
 # Adding titles and labels using the correct methods
 ax.set_title("Original vs Predicted Data", fontsize=16)
@@ -80,16 +82,47 @@ st.pyplot(fig)
 st.write(f"Metrics: ", model.test(dataset=DATASET, test=0.2))
 
 next_days = st.text_input("Prediction X next days:")
-last_n = st.text_input(
-    f"Enter last {model.length} days values separated by commas (ex: 2,3):"
-).split(",")
+
+last_n = DATASET["ing_hab"].tail(model.length)
 
 # Button to execute an action
 if st.button("Predict"):
     last_n = [int(v) for v in last_n]
     df = model.predict_next(
-        dataset=np.asarray([last_n], dtype=np.float32), next=int(next_days)
+        dataset=np.asarray(last_n),
+        next=int(next_days),
+        last_date=DATASET["Day"].iloc[-1],
     )
     st.write(f"Prediction of next {next_days}")
     st.write(df)
-    # st.dataframe(df)
+
+    df = pd.concat(
+        [DATASET.tail(1), df],
+        ignore_index=True,
+    )
+    fig, ax = plt.subplots(figsize=(14, 7))
+
+    # Plot the original test data
+    ax.plot(
+        DATASET["Day"],
+        DATASET["ing_hab"].to_numpy(),
+        label="Original Data",
+        color="blue",
+    )
+
+    # Plot the predicted data
+    ax.plot(df["Day"], df["ing_hab"].to_numpy(), label="Predicted Data", color="red")
+
+    # Adding titles and labels using the correct methods
+    ax.set_title("Original vs Predicted Data", fontsize=16)
+    ax.set_xlabel("Date", fontsize=14)
+    ax.set_ylabel("Value", fontsize=14)
+
+    # Adding a legend
+    ax.legend(fontsize=12)
+
+    # Optional: Improve date formatting on x-axis
+    fig.autofmt_xdate()
+
+    # Display the plot in Streamlit
+    st.pyplot(fig)
