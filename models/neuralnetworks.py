@@ -1,8 +1,11 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import InputLayer, Dropout, Dense
+from tensorflow.keras.layers import InputLayer, Dense
 from tensorflow.keras.layers import LSTM as layerLSTM
+import pandas as pd
+import logging
+from datetime import date, timedelta
 
 from .model import Model
 from .utils import get_train_validation_data, get_test_data, create_sequences
@@ -14,10 +17,12 @@ class LSTM(Model):
         name,
         created_at,
         version,
-        length=10,
+        length=2,
         metrics=None,
         model_type=None,
+        model=None,
     ):
+        super().__init__(name, created_at, version, metrics, model_type, model)
         self.model_type = "LSTM"
         self.length = length
 
@@ -25,38 +30,29 @@ class LSTM(Model):
         model = Sequential()
         model.add(InputLayer(shape=(self.length, 1)))
         # First LSTM layer
-        model.add(layerLSTM(units=150, return_sequences=True))
-        model.add(Dropout(0.2))
+        model.add(layerLSTM(units=8))
+        # Output Layer
+        model.add(Dense(units=1, activation="linear"))
 
-        # Second LSTM layer
-        model.add(layerLSTM(units=150))
-        model.add(Dropout(0.2))
-
-        # Dense layer
-        model.add(Dense(units=75, activation="relu"))
-        model.add(Dropout(0.2))
-
-        # Dense layer
-        model.add(Dense(units=75, activation="relu"))
-        model.add(Dropout(0.2))
-
-        # Output layer
-        model.add(Dense(units=1))
-
+        self.model = model
         return model
 
-    def training(self, dataset):
-        dataset = dataset.to_numpy()
-        model = self.build_model()
+    def train(self, dataset, train, validation=0):
+        model = self.model
+        if not model:
+            model = self.build_model()
+
         x, y = create_sequences(dataset, self.length)
         model.compile(
             loss="mean_squared_error",
-            optimizer=Adam(learning_rate=0.01),
+            optimizer=Adam(learning_rate=0.00000001),
             metrics=["mean_absolute_error"],
         )
         model.summary()
 
-        num_train, num_validation = get_train_validation_data(data=dataset, train=0.8)
+        num_train, num_validation = get_train_validation_data(
+            data=dataset, train=train, validation=validation
+        )
 
         x_train = x[:][:num_train]
         x_validation, y_validation = (
@@ -65,8 +61,8 @@ class LSTM(Model):
         )
         y_train = y[:][:num_train]
 
-        x_train = x_train.reshape((x_train.shape[0], 10, 1))
-        x_validation = x_validation.reshape((x_validation.shape[0], 10, 1))
+        x_train = x_train.reshape((x_train.shape[0], self.length, 1))
+        x_validation = x_validation.reshape((x_validation.shape[0], self.length, 1))
 
         callbacks = [EarlyStopping(patience=10, restore_best_weights=True)]
 
@@ -75,16 +71,56 @@ class LSTM(Model):
             y_train,
             validation_data=(x_validation, y_validation),
             epochs=100,
-            batch_size=64,
+            batch_size=4,
             callbacks=callbacks,
             shuffle=False,
         )
-        return model
+        self.model = model
+        return True
 
-    def test(self, model, dataset, test):
+    def test(self, dataset, test):
         num_test = get_test_data(data=dataset.to_numpy(), test=test)
-        x, y = create_sequences(dataset.to_numpy(), self.length)
+        x, y = create_sequences(dataset, self.length)
+
         x_test = x[:][-num_test:]
         y_test = y[:][-num_test:]
 
-        return model.evaluate(x_test, y_test)
+        x_test = x_test.reshape((x_test.shape[0], self.length, 1))
+        results = self.model.evaluate(x_test, y_test)
+        self.metrics = {"MSE": results[0], "MAE": results[1]}
+        return self.metrics
+
+    def predict(self, dataset, test=0):
+        num_test = get_test_data(data=dataset.to_numpy(), test=test)
+        x, _ = create_sequences(dataset, self.length)
+
+        x_test = x[:][-num_test:]
+
+        x_test = x_test.reshape((x_test.shape[0], self.length, 1))
+        return self.model.predict(x_test)
+
+    def predict_next(self, dataset, next):
+        df = pd.DataFrame(columns=["Day", "Value"])
+        last = dataset
+        last = last.reshape((last.shape[0], last.shape[1], 1))
+        for i in range(next):
+            predicted = self.model.predict(last)
+            logging.info(f"Predicted on: {last} ----- Result: {predicted}")
+            df = pd.concat(
+                [
+                    df,
+                    pd.DataFrame(
+                        data=[
+                            [
+                                date.today() + timedelta(days=i),
+                                predicted[0][0],
+                            ]
+                        ],
+                        columns=["Day", "Value"],
+                    ),
+                ],
+                ignore_index=True,
+            )
+            last[0][0], last[0][1] = last[0][1], predicted
+
+        return df
