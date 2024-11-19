@@ -51,13 +51,16 @@ class PROPHET(Model):
         test_future = self.model.make_future_dataframe(periods=num_test)
         test_forecast = self.model.predict(test_future)
 
-        residuals = y_test - test_forecast["yhat"][-num_test:]
         rmse = mean_squared_error(y_test, test_forecast["yhat"][-num_test:]) ** 0.5
         logging.info("Root Mean Squared Error (RMSE):", rmse)
 
-        mape = round(np.mean(abs(residuals / y_test)), len(residuals))
+        mape = np.mean(abs(y_test - test_forecast["yhat"][-num_test:]) / y_test)
         logging.info("Mean Absolute Percent Error:", mape)
-        self.metrics = {"RMSE": rmse, "MAPE": mape}
+
+        mae = np.mean(np.abs(y_test - test_forecast["yhat"][-num_test:]))
+        logging.info("Mean Absolute Error:", mae)
+
+        self.metrics = {"RMSE": rmse, "MAPE": mape, "MAE": mae}
         return self.metrics
 
     def predict(self, dataset, test):

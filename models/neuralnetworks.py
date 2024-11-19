@@ -114,11 +114,15 @@ class LSTM(Model):
         actuals = test_results_original["Actuals"]
 
         mape = np.mean(np.abs((actuals - predictions) / actuals))
+        logging.info("Mean Absolute Percent Error:", mape)
+
         rmse = np.sqrt(np.mean((actuals - predictions) ** 2))
+        logging.info("Root Mean Squared Error (RMSE):", rmse)
+
         mae = np.mean(np.abs(actuals - predictions))
+        logging.info("Mean Absolute Error:", mae)
+
         self.metrics = {"RMSE": rmse, "MAPE": mape, "MAE": mae}
-        # results = self.model.evaluate(x_test, y_test)
-        # self.metrics = {"MSE": results[0], "MAPE": results[1]}
         return self.metrics
 
     def predict(self, dataset, test=0):
