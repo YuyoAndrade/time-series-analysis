@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 
 def create_sequences(data, seq_length):
@@ -9,6 +11,15 @@ def create_sequences(data, seq_length):
         y.append(data[column][i + seq_length])
 
     return np.array(x), np.array(y)
+
+
+def normalize(data):
+    scaler = StandardScaler()
+    fitted = scaler.fit(data[["ing_hab"]])
+    scaled = fitted.transform(data[["ing_hab"]])
+    df_scaled = pd.DataFrame(scaled, columns=["ing_hab_scaled"])
+    df = pd.concat([data, df_scaled], axis=1)
+    return df, fitted
 
 
 def get_train_validation_data(data, train, validation=0):

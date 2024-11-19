@@ -105,4 +105,5 @@ def azure_daily_get_dataframe(table):
     result = get_table(table)
     df = pd.DataFrame(result.fetchall(), columns=result.keys())
     df = df.drop_duplicates()
+    df["Day"] = pd.to_datetime(df["Day"])
     return df
