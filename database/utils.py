@@ -8,29 +8,37 @@ from azure.core.exceptions import ResourceNotFoundError, AzureError
 
 
 def download_blob_to_file(
-    blob_service_client: BlobServiceClient, model_name, container_name, download_path
+    blob_service_client: BlobServiceClient,
+    model_name,
+    container_name,
+    download_path,
+    to_path=None,
 ):
     try:
+
         container_client = blob_service_client.get_container_client(
             container=container_name
         )
-        blob_client = container_client.get_blob_client(f"{model_name}.pkl")
+        blob_client = container_client.get_blob_client(
+            os.path.join(download_path, f"{model_name}.pkl")
+        )
         logging.info(
             f"Starting download of model {model_name} from container '{container_name}' to '{download_path}'..."
         )
-        local_file_path = os.path.join(download_path, model_name)
 
         # Create local directories if they do not exist
-        os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
+        os.makedirs(os.path.dirname(to_path), exist_ok=True)
 
         logging.info(f"Downloading model: {model_name}...")
 
         # Download the blob's content to the local file
-        with open(local_file_path, "wb") as download_file:
+        with open(
+            file=os.path.join(to_path, f"{model_name}.pkl"), mode="wb"
+        ) as download_file:
             download_stream = blob_client.download_blob()
             download_file.write(download_stream.readall())
 
-        logging.info(f"Successfully downloaded '{model_name}' to '{local_file_path}'.")
+        logging.info(f"Successfully downloaded '{model_name}' to '{to_path}'.")
     except ResourceNotFoundError as e:
         logging.info(f"Error: {e.message}")
     except AzureError as e:

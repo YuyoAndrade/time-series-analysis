@@ -1,14 +1,157 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import pickle
 import os
+
 
 from dotenv import load_dotenv
 from datetime import timedelta
 
 from database.connection import create_blob_client
 from database.utils import download_blob_to_file, azure_daily_get_dataframe
+
+
+def graph_plotly(hist, actual_test, predicted_test, future):
+    # Create the base figure
+    figLSTM365 = go.Figure()
+
+    # Add static traces (historical and actual test data)
+    figLSTM365.add_trace(
+        go.Scatter(
+            x=hist["Day"],
+            y=hist["ing_hab"],
+            mode="lines",
+            name="Información histórica",
+            line=dict(width=2, color="white"),
+        )
+    )
+    figLSTM365.add_trace(
+        go.Scatter(
+            x=actual_test["Day"],
+            y=actual_test["ing_hab"],
+            mode="lines",
+            name="Valores reales",
+            line=dict(width=2, color="red"),
+            visible="legendonly",
+        )
+    )
+
+    # Add animated traces (initialized with empty data)
+    figLSTM365.add_trace(
+        go.Scatter(
+            x=[],
+            y=[],
+            mode="lines",
+            name="Predicción prueba",
+            line=dict(width=2, color="orange"),
+        )
+    )
+    figLSTM365.add_trace(
+        go.Scatter(
+            x=[],
+            y=[],
+            mode="lines",
+            name="Predicción Futura",
+            line=dict(width=2, color="green"),
+        )
+    )
+
+    # Calculate total frames
+    len_orange = len(predicted_test)
+    len_green = len(future)
+    total_frames = len_orange + len_green
+
+    # Generate frames
+    frames = []
+    for i in range(1, total_frames + 1):
+        # Update the orange line data
+        if i <= len_orange:
+            orange_x = predicted_test["Day"][:i]
+            orange_y = predicted_test["ing_hab"][:i]
+        else:
+            orange_x = predicted_test["Day"]
+            orange_y = predicted_test["ing_hab"]
+
+        # Update the green line data
+        green_index = i - len_orange
+        if green_index > 0:
+            green_x = future["Day"][:green_index]
+            green_y = future["ing_hab"][:green_index]
+        else:
+            green_x = []
+            green_y = []
+
+        # Append the frame
+        frames.append(
+            go.Frame(
+                data=[
+                    # Only update the animated traces (indices 2 and 3)
+                    go.Scatter(
+                        x=orange_x,
+                        y=orange_y,
+                        mode="lines",
+                        line=dict(width=2, color="orange"),
+                        name="Predicción prueba",
+                    ),
+                    go.Scatter(
+                        x=green_x,
+                        y=green_y,
+                        mode="lines",
+                        line=dict(width=2, color="green"),
+                        name="Predicción Futura",
+                    ),
+                ],
+                traces=[2, 3],  # Indicate which traces to update
+            )
+        )
+
+    # Assign frames to the figure
+    figLSTM365.frames = frames
+
+    # Update layout with 'Simulate' and 'Pause' buttons
+    figLSTM365.update_layout(
+        updatemenus=[
+            dict(
+                type="buttons",
+                showactive=False,
+                buttons=[
+                    dict(
+                        label="Simulate",
+                        method="animate",
+                        args=[
+                            None,
+                            dict(
+                                frame=dict(duration=10, redraw=True), fromcurrent=False
+                            ),
+                        ],
+                    ),
+                    dict(
+                        label="Pause",
+                        method="animate",
+                        args=[
+                            [None],
+                            dict(
+                                frame=dict(duration=0, redraw=False), mode="immediate"
+                            ),
+                        ],
+                    ),
+                ],
+                x=0.1,
+                y=1.15,
+                xanchor="left",
+                yanchor="top",
+            )
+        ],
+        title="Predicción de Ingreso Habitacional de Enero 1 2024 a Diciembre 31 2024",
+        xaxis_title="Fecha",
+        yaxis_title="Ingreso USD",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    )
+
+    # Display the figure
+    st.plotly_chart(figLSTM365)
+
 
 st.title("Prophet Model")
 
@@ -38,41 +181,25 @@ download_blob_to_file(
     blob_service_client=blob_client,
     model_name=PROPHET_MODEL,
     container_name=BLOB_MODEL_CONTAINER,
-    download_path="/models/tmp/",
+    download_path="./models/tmp/",
+    to_path="/streamlit/tmp/",
 )
 
 st.subheader("Prophet Model Implementation")
 
-with open(f"/streamlit/models/tmp/{PROPHET_MODEL}.pkl", "rb") as f:
+with open(f"/streamlit/tmp/{PROPHET_MODEL}.pkl", "rb") as f:
     model = pickle.load(f)
 
 predicted = model.predict(dataset=DATASET, test=0.2)
 predicted_x = DATASET[-len(predicted) :]
 
-st.title("Prophet Test Results")
-
-fig, ax = plt.subplots(figsize=(14, 7))
-
-# Plot the original test data
-ax.plot(
-    DATASET["Day"], DATASET["ing_hab"].to_numpy(), label="Original Data", color="blue"
+dfHistorico = DATASET[DATASET["Day"] < predicted_x["Day"].iloc[0]]
+dfActualTest = DATASET[DATASET["Day"] >= predicted_x["Day"].iloc[0]]
+dfPrediccionTest = pd.DataFrame(
+    {"Day": predicted_x["Day"], "ing_hab": predicted["yhat"]}
 )
-# Plot the predicted data
-ax.plot(predicted_x["Day"], predicted["yhat"], label="Predicted Data", color="red")
 
-# Adding titles and labels using the correct methods
-ax.set_title("Original vs Predicted Data", fontsize=16)
-ax.set_xlabel("Date", fontsize=14)
-ax.set_ylabel("Value", fontsize=14)
-
-# Adding a legend
-ax.legend(fontsize=12)
-
-# Optional: Improve date formatting on x-axis
-fig.autofmt_xdate()
-
-# Display the plot in Streamlit
-st.pyplot(fig)
+st.subheader("Prophet Test Results")
 
 st.write(f"Metrics: ", model.test(dataset=DATASET, test=0.2))
 
@@ -89,34 +216,14 @@ if st.button("Predict"):
     else:
         st.success(f"Prediction period: {start_date} to {end_date}")
         df = model.predict_dates(start_date, end_date)
-        st.write(df)
 
         df = pd.concat(
             [DATASET.tail(1).rename(columns={"Day": "ds", "ing_hab": "yhat"}), df],
             ignore_index=True,
         )
-        fig, ax = plt.subplots(figsize=(14, 7))
 
-        # Plot the original test data
-        ax.plot(
-            DATASET["Day"],
-            DATASET["ing_hab"].to_numpy(),
-            label="Original Data",
-            color="blue",
-        )
-        # Plot the predicted data
-        ax.plot(df["ds"], df["yhat"].to_numpy(), label="Predicted Data", color="red")
+        dfPrediccionFuturo = df.rename(columns={"ds": "Day", "yhat": "ing_hab"})
 
-        # Adding titles and labels using the correct methods
-        ax.set_title("Predicted Data", fontsize=16)
-        ax.set_xlabel("Date", fontsize=14)
-        ax.set_ylabel("Value", fontsize=14)
+        graph_plotly(dfHistorico, dfActualTest, dfPrediccionTest, dfPrediccionFuturo)
 
-        # Adding a legend
-        ax.legend(fontsize=12)
-
-        # Optional: Improve date formatting on x-axis
-        fig.autofmt_xdate()
-
-        # Display the plot in Streamlit
-        st.pyplot(fig)
+        st.write(df)
