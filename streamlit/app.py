@@ -25,7 +25,7 @@ This application allows you to explore different time series forecasting models,
 # Add images alongside explanations
 st.header("Available Models")
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     st.subheader("LSTM Model")
@@ -44,6 +44,14 @@ with col2:
     The Holt-Winters method is a time series forecasting technique that includes level, trend, and seasonal components.
     """
     )
+with col3:
+    st.subheader("Prophet Model")
+    # st.image("images/holt_winters_model.png", use_column_width=True)
+    st.write(
+        """
+    Prophet is an open-source time series forecasting tool developed by Facebook's Core Data Science team.
+    """
+    )
 
 st.write(
     """
@@ -59,12 +67,12 @@ Each model includes:
 
 - **Graphs Related to Each Model**: Visual representations of the model's performance and data patterns.
 - **Predictions**: The model's forecasted values based on historical data.
-- **Predict with New Data**: Ability to input new data and see updated predictions.
 
 **How the App Works:**
 
 - **Fetching Models from Azure Blob Storage**: The pre-trained models are stored in Azure Blob Storage and are fetched dynamically when needed.
 - **Making Predictions with Example Dataset**: The app uses an example dataset to demonstrate how the models make predictions.
+- **Making Prediction for Future dates: The pre-trained models contain a method that predicts the future days (LSTM, Holt-Winters) or specific dates (Prophet) value per day.**
 
 This setup allows for scalable storage and efficient retrieval of models, ensuring you always have access to the latest versions without needing to store large files locally.
 """
