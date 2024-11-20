@@ -6,6 +6,7 @@ from tensorflow.keras.layers import LSTM as layerLSTM
 import pandas as pd
 import logging
 from datetime import date, timedelta
+import mlflow
 
 from .model import Model
 from .utils import get_train_validation_data, get_test_data, create_sequences
@@ -66,17 +67,19 @@ class LSTM(Model):
 
         callbacks = [EarlyStopping(patience=10, restore_best_weights=True)]
 
-        model.fit(
-            x_train,
-            y_train,
-            validation_data=(x_validation, y_validation),
-            epochs=100,
-            batch_size=4,
-            callbacks=callbacks,
-            shuffle=False,
-        )
+        with mlflow.start_run() as run:
+            model.fit(
+                x_train,
+                y_train,
+                validation_data=(x_validation, y_validation),
+                epochs=100,
+                batch_size=4,
+                callbacks=callbacks,
+                shuffle=False,
+            )
+        run_id = run.info.run_id
         self.model = model
-        return True
+        return True, run_id
 
     def test(self, dataset, test):
         num_test = get_test_data(data=dataset.to_numpy(), test=test)

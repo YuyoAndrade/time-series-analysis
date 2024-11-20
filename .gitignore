@@ -167,3 +167,6 @@ cython_debug/
 *.pkl
 
 *.parquet
+
+azure_flow/mlruns
+azure_flow/downloaded_model
