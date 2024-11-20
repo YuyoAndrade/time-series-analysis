@@ -14,10 +14,10 @@ from database.utils import download_blob_to_file, azure_daily_get_dataframe
 
 def graph_plotly(hist, actual_test, predicted_test, future):
     # Create the base figure
-    figLSTM365 = go.Figure()
+    figplot = go.Figure()
 
     # Add static traces (historical and actual test data)
-    figLSTM365.add_trace(
+    figplot.add_trace(
         go.Scatter(
             x=hist["Day"],
             y=hist["ing_hab"],
@@ -26,31 +26,31 @@ def graph_plotly(hist, actual_test, predicted_test, future):
             line=dict(width=2, color="white"),
         )
     )
-    figLSTM365.add_trace(
+    figplot.add_trace(
         go.Scatter(
             x=actual_test["Day"],
             y=actual_test["ing_hab"],
             mode="lines",
             name="Valores reales",
-            line=dict(width=2, color="red"),
-            visible="legendonly",
+            line=dict(width=2, color="gray"),
+            visible=True,
         )
     )
 
     # Add animated traces (initialized with empty data)
-    figLSTM365.add_trace(
+    figplot.add_trace(
         go.Scatter(
-            x=[],
-            y=[],
+            x=predicted_test["Day"][:1],
+            y=predicted_test["ing_hab"][:1],
             mode="lines",
             name="Predicción prueba",
             line=dict(width=2, color="orange"),
         )
     )
-    figLSTM365.add_trace(
+    figplot.add_trace(
         go.Scatter(
-            x=[],
-            y=[],
+            x=future["Day"][:1],
+            y=future["ing_hab"][:1],
             mode="lines",
             name="Predicción Futura",
             line=dict(width=2, color="green"),
@@ -107,10 +107,10 @@ def graph_plotly(hist, actual_test, predicted_test, future):
         )
 
     # Assign frames to the figure
-    figLSTM365.frames = frames
+    figplot.frames = frames
 
     # Update layout with 'Simulate' and 'Pause' buttons
-    figLSTM365.update_layout(
+    figplot.update_layout(
         updatemenus=[
             dict(
                 type="buttons",
@@ -150,7 +150,7 @@ def graph_plotly(hist, actual_test, predicted_test, future):
     )
 
     # Display the figure
-    st.plotly_chart(figLSTM365)
+    st.plotly_chart(figplot)
 
 
 st.title("Holt-Winters Model")
