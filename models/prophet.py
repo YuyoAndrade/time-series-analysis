@@ -51,16 +51,27 @@ class PROPHET(Model):
         test_future = self.model.make_future_dataframe(periods=num_test)
         test_forecast = self.model.predict(test_future)
 
-        residuals = y_test - test_forecast["yhat"][-num_test:]
         rmse = mean_squared_error(y_test, test_forecast["yhat"][-num_test:]) ** 0.5
         logging.info("Root Mean Squared Error (RMSE):", rmse)
 
-        mape = round(np.mean(abs(residuals / y_test)), len(residuals))
+        mape = np.mean(abs(y_test - test_forecast["yhat"][-num_test:]) / y_test)
         logging.info("Mean Absolute Percent Error:", mape)
-        self.metrics = {"RMSE": rmse, "MAPE": mape}
+
+        mae = np.mean(np.abs(y_test - test_forecast["yhat"][-num_test:]))
+        logging.info("Mean Absolute Error:", mae)
+
+        self.metrics = {"RMSE": rmse, "MAPE": mape, "MAE": mae}
         return self.metrics
 
-    def predict(self, start_date, end_date):
+    def predict(self, dataset, test):
+        test_data = dataset.to_numpy()
+        num_test = get_test_data(data=test_data, test=test)
+        test_future = self.model.make_future_dataframe(periods=num_test)
+        test_forecast = self.model.predict(test_future)
+
+        return test_forecast[["ds", "yhat"]][-num_test:]
+
+    def predict_dates(self, start_date, end_date):
         date_range = pd.date_range(start=start_date, end=end_date)
         date_df = pd.DataFrame({"ds": date_range})
 

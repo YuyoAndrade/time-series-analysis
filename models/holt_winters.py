@@ -58,13 +58,16 @@ class HOLT_WINTERS(Model):
         test_forecast = self.model.forecast(num_test)
         test_series = pd.Series(test_forecast)
 
-        residuals = y_test - test_series
-
         rmse = mean_squared_error(y_test, test_series) ** 0.5
         logging.info("Root Mean Squared Error (RMSE):", rmse)
-        mape = round(np.mean(abs(residuals / y_test)), len(residuals))
+
+        mape = np.mean(np.abs((y_test - test_series) / y_test))
         logging.info("Mean Absolute Percent Error:", mape)
-        self.metrics = {"RMSE": rmse, "MAPE": mape}
+
+        mae = np.mean(np.abs(y_test - test_series))
+        logging.info("Mean Absolute Error:", mae)
+
+        self.metrics = {"RMSE": rmse, "MAPE": mape, "MAE": mae}
         return self.metrics
 
     def predict(self, next):
