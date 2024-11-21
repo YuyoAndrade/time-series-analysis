@@ -32,7 +32,7 @@ with DAG(
     "etl_pipeline",
     description="DAG for Extracting, Transforming, and Loading data to Azure.",
     default_args=default_args,
-    schedule_interval="@monthly",
+    schedule_interval="@daily",
     catchup=False,
 ) as dag:
 
