@@ -208,7 +208,7 @@ next_days = st.text_input("Prediction X next days:", value=30)
 
 # Button to execute an action
 if st.button("Predict"):
-    results = model.predict(next=next)
+    results = model.predict(next=next + int(len(DATASET) * 0.2))
     df = pd.DataFrame({"ing_hab": results[-int(next_days) :]})
     df["Day"] = pd.date_range(
         start=DATASET["Day"].iloc[-1] + timedelta(days=1),
@@ -220,7 +220,7 @@ if st.button("Predict"):
         ignore_index=True,
     )
 
-    dfPrediccionFuturo = df
+    dfPrediccionFuturo = df.tail(next + 1)
 
     graph_plotly(dfHistorico, dfActualTest, dfPrediccionTest, dfPrediccionFuturo)
 

@@ -1,9 +1,9 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-import pandas as pd
 import logging
 import pickle
+import os
 import sys
 from pathlib import Path
 
@@ -36,6 +36,7 @@ with DAG(
             model = MODELS_TO_CREATE[m]
             model.build_model()
             model_path = f"./models/tmp/{m}.pkl"
+            os.makedirs("./models/tmp/", exist_ok=True)
             with open(model_path, "wb") as f:
                 pickle.dump(model, f)
             models.append(model_path)
