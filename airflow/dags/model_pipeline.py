@@ -25,7 +25,7 @@ with DAG(
     "model_pipeline",
     description="DAG for ML models creation, training, testing, load.",
     default_args=default_args,
-    schedule_interval="@monthly",
+    schedule_interval="@daily",
     catchup=False,
 ) as dag:
 
